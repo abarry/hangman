@@ -1,0 +1,27 @@
+{% extends "SensioHangmanBundle::layout.html.twig" %}
+
+{% block title -%}
+
+    Registration
+
+{%- endblock title %}
+
+{% block body %}
+
+
+    <h2>Log-in to your account</h2>
+    {% if error %}
+    <div class="error"> {{ error.message }}</div>
+    {% endif %}
+    <form action="{{ path('login_check') }}" method="post" novalidate>
+        <lable for="username">Username : </label>
+        <input type="text" id="username" name="_username" value="{{ last_username }}" />
+
+        <lable for="password">Password : </label>
+        <input type="password" id="_password" name="_password"/>
+        <div>
+            <button type="submit"> login </button>
+        </div>
+    </form>
+
+{% endblock body %}
