@@ -3,14 +3,19 @@
 namespace Sensio\Bundle\HangmanBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Sensio\Bundle\HangmanBundle\Entity\Player
  *
  * @ORM\Table(name="sl_players")
  * @ORM\Entity(repositoryClass="Sensio\Bundle\HangmanBundle\Entity\PlayerRepository")
+ * @UniqueEntity(fields="username", message="Username already taken")
+ * @uniqueEntity(fields="email", message="Email already taken")
  */
-class Player
+class Player implements UserInterface
 {
     /**
      * @var integer $id
@@ -23,6 +28,10 @@ class Player
 
     /**
      * @var string $username
+     * @Assert\NotBlank()
+     * @Assert\MinLength(6)
+     * @Assert\MaxLength(15)
+     * @Assert\Regex("/^[a-z][a-z0-9]+$/i")
      *
      * @ORM\Column(name="username", type="string", length=15, unique=true)
      *
@@ -31,15 +40,14 @@ class Player
 
     /**
      * @var string $email
-     *
      * @ORM\Column(name="email", type="string", length=60, unique=true)
-     *
+     * @Assert\NotBlank()
+     * @Assert\Email()
      */
     private $email;
 
     /**
      * @var string $password
-     *
      * @ORM\Column(name="password", type="string", length=150)
      */
     private $password;
@@ -91,6 +99,8 @@ class Player
     public function setRawPassword($password)
     {
         $this->rawPassword = $password;
+        $this->password = $password;
+        $this->salt = sha1(uniqid().microtime().rand(0, 999999));
     }
 
     public function getRawPassword()
@@ -159,6 +169,14 @@ class Player
     }
 
     /**
+    * @Assert\True(message="Your password should not contains your user name")
+    */
+    public function isPasswordValid()
+    {
+        return 0 === preg_match('/'.preg_quote($this->username).'/i',$this->rawPassword);
+    }
+
+    /**
      * Get password
      *
      * @return string 
@@ -185,7 +203,8 @@ class Player
      */
     public function getSalt()
     {
-        return $this->salt;
+        return null;
+        //return $this->salt;
     }
 
     /**
@@ -246,5 +265,19 @@ class Player
     public function getExpiresAt()
     {
         return $this->expiresAt;
+    }
+
+    public function getRoles()
+    {
+        if ($this->isAdmin) {
+            return array('ROLE_ADMIN');
+        }
+
+        return array('ROLE_PLAYER');
+    }
+
+    public function eraseCredentials()
+    {
+        $this->rawPassword = null;
     }
 }
